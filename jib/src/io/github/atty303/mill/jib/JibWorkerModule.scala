@@ -2,11 +2,11 @@ package io.github.atty303.mill.jib
 
 import io.github.atty303.mill.jib.worker.api.JibWorkerManager
 import mill.T
-import mill.define.{Discover, ExternalModule, Module, Worker}
+import mill.api.{Discover, ExternalModule, Module, Task}
 
 trait JibWorkerModule extends Module {
-  def jibWorkerManager: Worker[JibWorkerManager] = T.worker {
-    new JibInJvmWorkerManager(T.ctx())
+  def jibWorkerManager: Task.Worker[JibWorkerManager] = Task.Worker {
+    new JibInJvmWorkerManager(Task.ctx())
   }
 }
 

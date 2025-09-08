@@ -1,14 +1,14 @@
 package io.github.atty303.mill.jib
 
 import io.github.atty303.mill.jib.worker.api.{JibWorker, JibWorkerManager}
-import mill.api.{Ctx, PathRef}
+import mill.api.{TaskCtx, PathRef}
 
 import java.net.{URL, URLClassLoader}
 
-class JibInJvmWorkerManager(ctx: Ctx.Log) extends JibWorkerManager {
-  private[this] var workerCache: Map[Seq[PathRef], (JibWorker, Int)] = Map.empty
+class JibInJvmWorkerManager(ctx: TaskCtx.Log) extends JibWorkerManager {
+  private var workerCache: Map[Seq[PathRef], (JibWorker, Int)] = Map.empty
 
-  def get(toolsClasspath: Seq[PathRef])(implicit ctx: Ctx): JibWorker = {
+  def get(toolsClasspath: Seq[PathRef])(implicit ctx: TaskCtx): JibWorker = {
     val (worker, count) = workerCache.get(toolsClasspath) match {
       case Some((w, count)) =>
         ctx.log.debug(

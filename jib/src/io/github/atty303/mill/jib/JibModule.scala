@@ -13,10 +13,11 @@ import io.github.atty303.mill.jib.worker.api.{
   Port
 }
 import mill._
-import mill.define.{Command, Task}
+import mill.api.Task
 import mill.scalalib._
 
 import java.time.Instant
+import coursier.Repositories
 
 trait JibModule { outer: JavaModule =>
   trait DockerConfig extends Module {
@@ -25,11 +26,11 @@ trait JibModule { outer: JavaModule =>
     /** Tags that should be applied to the built image
       * In the standard registry/repository:tag format
       */
-    def image: T[String] = T(outer.artifactName())
+    def image: T[String] = Task(outer.artifactName())
 
-    def additionalTags: T[Seq[String]] = T(Seq.empty[String])
+    def additionalTags: T[Seq[String]] = Task(Seq.empty[String])
 
-    def baseImage: T[String] = T("gcr.io/distroless/java:latest")
+    def baseImage: T[String] = Task("gcr.io/distroless/java:latest")
 
     /** Sets the container entrypoint. This is the beginning of the command that is run when the
       * container starts. {@link #programArguments} sets additional tokens.
@@ -42,7 +43,7 @@ trait JibModule { outer: JavaModule =>
       *
       * @return a list of the entrypoint command
       */
-    def entrypoint: T[Seq[String]] = T(Seq.empty[String])
+    def entrypoint: T[Seq[String]] = Task(Seq.empty[String])
 
     /** Sets the container entrypoint program arguments. These are additional tokens added to the end
       * of the entrypoint command.
@@ -58,7 +59,7 @@ trait JibModule { outer: JavaModule =>
       *
       * @return a list of program argument tokens
       */
-    def programArguments: T[Seq[String]] = T(Seq.empty[String])
+    def programArguments: T[Seq[String]] = Task(Seq.empty[String])
 
     /** Sets the container environment. These environment variables are available to the program
       * launched by the container entrypoint command.
@@ -70,7 +71,7 @@ trait JibModule { outer: JavaModule =>
       *
       * @return a map of environment variable names to values
       */
-    def environment: T[Map[String, String]] = T(Map.empty[String, String])
+    def environment: T[Map[String, String]] = Task(Map.empty[String, String])
 
     /** Sets the directories that may hold externally mounted volumes.
       *
@@ -79,7 +80,7 @@ trait JibModule { outer: JavaModule =>
       *
       * @return the directory paths on the container filesystem to set as volumes
       */
-    def volumes: T[Set[String]] = T(Set.empty[String])
+    def volumes: T[Set[String]] = Task(Set.empty[String])
 
     /** Sets the ports to expose from the container. Ports exposed will allow ingress traffic.
       *
@@ -93,7 +94,7 @@ trait JibModule { outer: JavaModule =>
       *
       * @return the ports to expose
       */
-    def exposedPorts: Task[Set[Port]] = T.task(Set.empty[Port])
+    def exposedPorts: Task[Set[Port]] = Task.Anon(Set.empty[Port])
 
     /** Sets the labels for the container.
       *
@@ -102,20 +103,20 @@ trait JibModule { outer: JavaModule =>
       *
       * @return a map of label keys to values
       */
-    def labels: T[Map[String, String]] = T(Map.empty[String, String])
+    def labels: T[Map[String, String]] = Task(Map.empty[String, String])
 
     /** Sets the format to build the container image as. Use {@link ImageFormat#Docker} for Docker V2.2
       * or {@link ImageFormat#OCI} for OCI.
       *
       * @return the {@link ImageFormat}
       */
-    def imageFormat: Task[ImageFormat] = T.task(ImageFormat.Docker)
+    def imageFormat: Task[ImageFormat] = Task.Anon(ImageFormat.Docker)
 
     /** Sets the container image creation time. The default is {@link Instant#EPOCH}.
       *
       * @return the container image creation time
       */
-    def creationTime: Task[Instant] = T.task(Instant.EPOCH)
+    def creationTime: Task[Instant] = Task.Anon(Instant.EPOCH)
 
     /** Sets a desired platform (properties including OS and architecture) list. If the base image
       * reference is a Docker manifest list or an OCI image index, an image builder may select the base
@@ -127,7 +128,7 @@ trait JibModule { outer: JavaModule =>
       *
       * @return list of platforms to select base images in case of a manifest list
       */
-    def platforms: Task[Set[Platform]] = T.task(Set.empty[Platform])
+    def platforms: Task[Set[Platform]] = Task.Anon(Set.empty[Platform])
 
     /** Sets the user and group to run the container as. `user` can be a username or UID along
       * with an optional groupname or GID.
@@ -147,23 +148,23 @@ trait JibModule { outer: JavaModule =>
       *
       * @return the user to run the container as
       */
-    def user: T[Option[String]] = T(None)
+    def user: T[Option[String]] = Task(None)
 
     /** Sets the working directory in the container.
       *
       * @return the working directory
       */
-    def workingDirectory: T[Option[String]] = T(None)
+    def workingDirectory: T[Option[String]] = Task(None)
 
     def additionalLayer: T[Map[os.Path, String]] =
-      T.input(Map.empty[os.Path, String])
-    def additionalLayerFileEntries: Task[Seq[FileEntry]] = T.task {
+      Task.Input(Map.empty[os.Path, String])
+    def additionalLayerFileEntries: Task[Seq[FileEntry]] = Task.Anon {
       additionalLayer().toSeq.map { case (path, target) =>
         FileEntry(path, target)
       }
     }
 
-    def containerConfig: Task[ContainerConfig] = T.task {
+    def containerConfig: Task[ContainerConfig] = Task.Anon {
       ContainerConfig(
         entrypoint(),
         programArguments(),
@@ -180,23 +181,23 @@ trait JibModule { outer: JavaModule =>
       )
     }
 
-    def jvmFlags: T[Seq[String]] = T(Seq.empty[String])
+    def jvmFlags: T[Seq[String]] = Task(Seq.empty[String])
 
     def projectJars: Task[Seq[(String, PathRef)]] =
-      T.traverse(transitiveModuleDeps) { m =>
-        T.task(m.artifactId() -> m.jar())
+      Task.traverse(transitiveModuleDeps) { m =>
+        Task.Anon(m.artifactId() -> m.jar())
       }
 
     def baseUsername: T[Option[String]] =
-      T.input(T.env.get("JIB_BASE_IMAGE_USERNAME"))
+      Task.Input(Task.env.get("JIB_BASE_IMAGE_USERNAME"))
     def basePassword: T[Option[String]] =
-      T.input(T.env.get("JIB_BASE_IMAGE_PASSWORD"))
+      Task.Input(Task.env.get("JIB_BASE_IMAGE_PASSWORD"))
     def targetUsername: T[Option[String]] =
-      T.input(T.env.get("JIB_TARGET_IMAGE_USERNAME"))
+      Task.Input(Task.env.get("JIB_TARGET_IMAGE_USERNAME"))
     def targetPassword: T[Option[String]] =
-      T.input(T.env.get("JIB_TARGET_IMAGE_PASSWORD"))
+      Task.Input(Task.env.get("JIB_TARGET_IMAGE_PASSWORD"))
 
-    def credentials: Task[Credentials] = T.task {
+    def credentials: Task[Credentials] = Task.Anon {
       Credentials(
         baseUsername(),
         basePassword(),
@@ -206,28 +207,28 @@ trait JibModule { outer: JavaModule =>
     }
 
     def jibVersion: T[String] = "0.24.0"
-    def jibToolsDeps: T[Agg[Dep]] = T {
-      Agg(
-        ivy"com.google.cloud.tools:jib-core:${jibVersion()}",
-        ivy"${jib.Versions.millJibWorkerImplIvyDep}"
+    def jibToolsDeps: T[Seq[Dep]] = Task {
+      Seq(
+        mvn"com.google.cloud.tools:jib-core:${jibVersion()}",
+        mvn"${jib.Versions.millJibWorkerImplIvyDep}"
       )
     }
 
-    def jibToolsClasspath: T[Agg[PathRef]] = T {
-      resolveDeps(jibToolsDeps.map(_.map(_.bindDep("", "", ""))))
+    def jibToolsClasspath: T[Seq[PathRef]] = Task {
+      Lib.resolveDependencies(repositoriesTask(), jibToolsDeps().map(_.bindDep("", "", "")))
     }
 
-    def baseImageLayerCachePath: Task[CachePath] = T.task(CachePath.Default)
-    def applicationLayerCachePath: Task[CachePath] = T.task(CachePath.Default)
+    def baseImageLayerCachePath: Task[CachePath] = Task.Anon(CachePath.Default)
+    def applicationLayerCachePath: Task[CachePath] = Task.Anon(CachePath.Default)
 
-    protected def jibWorkerTask: Task[JibWorker] = T.task {
+    protected def jibWorkerTask: Task[JibWorker] = Task.Anon {
       jibWorkerModule
         .jibWorkerManager()
         .get(jibToolsClasspath().iterator.to(Seq))
     }
 
-    def renamedProjectJars: T[Seq[PathRef]] = T {
-      val dest = T.ctx().dest
+    def renamedProjectJars: T[Seq[PathRef]] = Task {
+      val dest = Task.ctx().dest
       projectJars().map { case (artifactId, jar) =>
         val d = dest / s"${artifactId}.jar"
         os.copy(jar.path, d)
@@ -235,9 +236,16 @@ trait JibModule { outer: JavaModule =>
       }
     }
 
-    def buildDocker(): Command[Unit] = T.command {
+    def resolvedRunIvyDeps: T[Seq[PathRef]] = Task {
+      Lib.resolveDependencies(
+        repositoriesTask(),
+        runMvnDeps().map(_.bindDep("", "", ""))
+      )
+    }
+    
+    def buildDocker(): Command[Unit] = Task.Command {
       jibWorkerTask().build(
-        T.ctx.log,
+        Task.ctx().log,
         credentials(),
         Image.DockerDaemonImage(image()),
         additionalTags(),
@@ -252,9 +260,9 @@ trait JibModule { outer: JavaModule =>
       )
     }
 
-    def buildImage(): Command[Unit] = T.command {
+    def buildImage(): Command[Unit] = Task.Command {
       jibWorkerTask().build(
-        T.ctx.log,
+        Task.ctx().log,
         credentials(),
         Image.RegistryImage(image()),
         additionalTags(),

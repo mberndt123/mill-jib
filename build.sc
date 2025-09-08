@@ -36,15 +36,15 @@ trait MyPublishModule extends PublishModule {
 }
 
 trait MyModule extends MyPublishModule with ScalaModule {
-  def scalaVersion = "2.13.16"
+  def scalaVersion = "3.7.2"
 }
 
-def millVersion = "0.11.1"
+def millVersion = "1.0.4"
 
 object api extends MyModule {
   override def artifactName = "mill-jib-api"
   override def compileIvyDeps = Agg(
-    ivy"com.lihaoyi::mill-scalalib:${millVersion}"
+    ivy"com.lihaoyi::mill-libs-scalalib:${millVersion}"
   )
 }
 
@@ -52,7 +52,7 @@ object worker extends MyModule {
   override def artifactName = "mill-jib-worker"
   override def moduleDeps = Seq(api)
   override def compileIvyDeps = Agg(
-    ivy"com.lihaoyi::mill-scalalib:${millVersion}",
+    ivy"com.lihaoyi::mill-libs-scalalib:${millVersion}",
     ivy"com.google.cloud.tools:jib-core:0.24.0"
   )
 }
@@ -62,7 +62,7 @@ object jib extends MyModule {
   override def moduleDeps = Seq(api)
 
   override def compileIvyDeps = Agg(
-    ivy"com.lihaoyi::mill-scalalib:${millVersion}"
+    ivy"com.lihaoyi::mill-libs-scalalib:${millVersion}"
   )
 
   override def generatedSources: T[Seq[PathRef]] = T {

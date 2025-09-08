@@ -67,7 +67,7 @@ object jib extends MyModule {
 
   override def generatedSources: T[Seq[PathRef]] = Task {
     super.generatedSources() ++ {
-      val dest = Task.ctx().dest
+      val dest = Task.dest
       val millJibWorkerImplIvyDep =
         s"${worker.pomSettings().organization}:${worker.artifactId()}:${worker.publishVersion()}"
       val body =

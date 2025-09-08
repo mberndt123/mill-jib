@@ -228,7 +228,7 @@ trait JibModule { outer: JavaModule =>
     }
 
     def renamedProjectJars: T[Seq[PathRef]] = Task {
-      val dest = Task.ctx().dest
+      val dest = Task.dest
       projectJars().map { case (artifactId, jar) =>
         val d = dest / s"${artifactId}.jar"
         os.copy(jar.path, d)
@@ -245,7 +245,7 @@ trait JibModule { outer: JavaModule =>
     
     def buildDocker(): Command[Unit] = Task.Command {
       jibWorkerTask().build(
-        Task.ctx().log,
+        Task.log,
         credentials(),
         Image.DockerDaemonImage(image()),
         additionalTags(),
@@ -262,7 +262,7 @@ trait JibModule { outer: JavaModule =>
 
     def buildImage(): Command[Unit] = Task.Command {
       jibWorkerTask().build(
-        Task.ctx().log,
+        Task.log,
         credentials(),
         Image.RegistryImage(image()),
         additionalTags(),

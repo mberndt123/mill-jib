@@ -1,22 +1,22 @@
 package io.github.atty303.mill.jib
 
 import io.github.atty303.mill.jib.worker.api.{JibWorker, JibWorkerManager}
-import mill.api.{TaskCtx, PathRef}
+import mill.api.{TaskCtx, PathRef, Task}
 
 import java.net.{URL, URLClassLoader}
 
 class JibInJvmWorkerManager(ctx: TaskCtx.Log) extends JibWorkerManager {
   private var workerCache: Map[Seq[PathRef], (JibWorker, Int)] = Map.empty
 
-  def get(toolsClasspath: Seq[PathRef])(implicit ctx: TaskCtx): JibWorker = {
+  def get(toolsClasspath: Seq[PathRef])(using TaskCtx): JibWorker = {
     val (worker, count) = workerCache.get(toolsClasspath) match {
       case Some((w, count)) =>
-        ctx.log.debug(
+        Task.log.debug(
           s"Reusing existing JibWorker for classpath: ${toolsClasspath}"
         )
         w -> count
       case None =>
-        ctx.log.debug(
+        Task.log.debug(
           s"Creating Classloader with classpath: [${toolsClasspath}]"
         )
         val classLoader = new URLClassLoader(
